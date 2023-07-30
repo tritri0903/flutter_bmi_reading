@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -18,53 +19,6 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: const FlutterBlueApp(),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }
@@ -100,26 +54,27 @@ class FindDeviceScreen extends StatelessWidget {
         title: const Text("Scanning of device"),
       ),
       body: Center(
-        child: SizedBox(
-          width: 200,
-          height: 200,
-          child: ElevatedButton(
-            onPressed: () => FlutterBluePlus.scanResults.listen((results) {
-              for (ScanResult r in results) {
-                if (r.device.localName == "xMap") {
-                  r.device.connect();
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (context) {
-                    return const DeviceScreen();
-                  }));
-                }
-              }
-            }),
-            child: const Icon(
-              Icons.bluetooth_connected_rounded,
-              size: 150.0,
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: TextField(
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Enter device name',
+                  labelText: 'Device Name'),
+              textAlign: TextAlign.center,
+              controller: TextEditingController(text: 'xMap'),
+              onSubmitted: (value) =>
+                  FlutterBluePlus.scanResults.listen((results) {
+                    for (ScanResult r in results) {
+                      if (r.device.localName == value) {
+                        r.device.connect();
+                        Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (context) {
+                          return DeviceScreen(bluetoothDevice: r.device);
+                        }));
+                      }
+                    }
+                  })),
         ),
       ),
     );
@@ -127,15 +82,67 @@ class FindDeviceScreen extends StatelessWidget {
 }
 
 class DeviceScreen extends StatelessWidget {
-  const DeviceScreen({super.key});
+  const DeviceScreen({super.key, required this.bluetoothDevice});
+
+  final BluetoothDevice bluetoothDevice;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Connected"),
+        title: Text("Connected to ${bluetoothDevice.localName}"),
       ),
-      body: const Text("data"),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: const [
+                Text(
+                  'Axe Y: ',
+                  style: TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+                Text(
+                  '1.0',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                )
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: const [
+                Text(
+                  'Axe X: ',
+                  style: TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+                Text(
+                  '1.0',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+void getService(BluetoothDevice bluetoothDevice) async {
+  List<BluetoothService> services = await bluetoothDevice.discoverServices();
+  services.forEach((service) {
+    // do something with service
+  });
 }
