@@ -36,7 +36,8 @@ class FlutterBlueApp extends StatelessWidget {
           builder: (c, snapshot) {
             final state = snapshot.data;
             if (state == BluetoothAdapterState.on) {
-              return const FindDeviceScreen();
+              FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+              return FindDeviceScreen();
             }
             return const Text('Error no bluetooth');
           }),
@@ -45,7 +46,9 @@ class FlutterBlueApp extends StatelessWidget {
 }
 
 class FindDeviceScreen extends StatelessWidget {
-  const FindDeviceScreen({super.key});
+  FindDeviceScreen({super.key});
+
+  final _controler = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -53,29 +56,40 @@ class FindDeviceScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Scanning of device"),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: TextField(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: TextField(
               decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Enter device name',
                   labelText: 'Device Name'),
               textAlign: TextAlign.center,
-              controller: TextEditingController(text: 'xMap'),
-              onSubmitted: (value) =>
-                  FlutterBluePlus.scanResults.listen((results) {
-                    for (ScanResult r in results) {
-                      if (r.device.localName == value) {
-                        r.device.connect();
-                        Navigator.of(context)
-                            .push(MaterialPageRoute(builder: (context) {
-                          return DeviceScreen(bluetoothDevice: r.device);
-                        }));
-                      }
-                    }
-                  })),
-        ),
+              controller: _controler,
+            ),
+          ),
+          Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: StreamBuilder<List<ScanResult>>(
+                stream: FlutterBluePlus.scanResults,
+                initialData: const [],
+                builder: (context, snapshot) => Column(
+                  children: snapshot.data!
+                      .map((d) => Column(
+                            children: [
+                              Text(
+                                d.device.localName,
+                                style: const TextStyle(
+                                    backgroundColor: Colors.blue),
+                              ),
+                              Text(d.device.readRssi().toString())
+                            ],
+                          ))
+                      .toList(),
+                ),
+              )),
+        ],
       ),
     );
   }
