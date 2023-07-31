@@ -48,7 +48,7 @@ class FlutterBlueApp extends StatelessWidget {
 class FindDeviceScreen extends StatelessWidget {
   FindDeviceScreen({super.key});
 
-  final _controler = TextEditingController();
+  final BluetoothDevice = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -66,32 +66,70 @@ class FindDeviceScreen extends StatelessWidget {
                   hintText: 'Enter device name',
                   labelText: 'Device Name'),
               textAlign: TextAlign.center,
-              controller: _controler,
+              onSubmitted: (value) => connectToDevice(value),
             ),
           ),
           Padding(
               padding: const EdgeInsets.all(20.0),
-              child: StreamBuilder<List<ScanResult>>(
-                stream: FlutterBluePlus.scanResults,
-                initialData: const [],
-                builder: (context, snapshot) => Column(
-                  children: snapshot.data!
-                      .map((d) => Column(
-                            children: [
-                              Text(
-                                d.device.localName,
-                                style: const TextStyle(
-                                    backgroundColor: Colors.blue),
-                              ),
-                              Text(d.device.readRssi().toString())
-                            ],
-                          ))
-                      .toList(),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(width: 2, color: Colors.grey)),
+                child: StreamBuilder<List<ScanResult>>(
+                  stream: FlutterBluePlus.scanResults,
+                  initialData: const [],
+                  builder: (context, snapshot) => Column(
+                    children: snapshot.data!
+                        .map((d) => Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(5.0),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5),
+                                      border: Border.all(
+                                          width: 2, color: Colors.grey)),
+                                  child: Text(
+                                    d.device.localName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ))
+                        .toList(),
+                  ),
                 ),
               )),
         ],
       ),
+      floatingActionButton: StreamBuilder<bool>(
+        stream: FlutterBluePlus.isScanning,
+        initialData: false,
+        builder: (c, snapshot) {
+          if (snapshot.data!) {
+            return FloatingActionButton(
+                onPressed: () => FlutterBluePlus.stopScan(),
+                backgroundColor: Colors.red,
+                child: const Icon(Icons.stop));
+          } else {
+            return FloatingActionButton(
+                child: const Icon(Icons.search),
+                onPressed: () => FlutterBluePlus.startScan(
+                    timeout: const Duration(seconds: 4)));
+          }
+        },
+      ),
     );
+  }
+
+  void connectToDevice(String deviceName) {
+    FlutterBluePlus.scanResults.listen((results) async {
+      for (ScanResult r in results) {
+        if (r.device.localName == deviceName) {
+          await r.device.connect();
+        }
+      }
+    });
   }
 }
 
