@@ -85,6 +85,7 @@ class FindDeviceScreen extends StatelessWidget {
                                     onPressed: () => Navigator.of(context).push(
                                         MaterialPageRoute(builder: (context) {
                                       d.device.connect();
+                                      d.device.discoverServices();
                                       return DeviceScreen(
                                           bluetoothDevice: d.device);
                                     })),
@@ -146,54 +147,66 @@ class DeviceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Connected to ${bluetoothDevice.localName}"),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              children: [
-                const Text(
-                  'Axe Y: ',
-                  style: TextStyle(
-                    fontSize: 20,
+    if (bluetoothDevice.servicesList!.isNotEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text("Connected to ${bluetoothDevice.localName}"),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                children: [
+                  const Text(
+                    'Device Name: ',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
                   ),
-                ),
-                Text(
-                  bluetoothDevice.localName.toString(),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                )
-              ],
+                  Text(
+                    bluetoothDevice.localName.toString(),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              children: const [
-                Text(
-                  'Axe X: ',
-                  style: TextStyle(
-                    fontSize: 20,
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                children: [
+                  const Text(
+                    'Axe X: ',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
                   ),
-                ),
-                Text(
-                  '1.0',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                )
-              ],
+                  Text(
+                    bluetoothDevice
+                        .servicesList!.first.characteristics.last.lastValue
+                        .toString(),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+            TextButton.icon(
+                onPressed: () => bluetoothDevice
+                    .servicesList!.first.characteristics.last
+                    .read(),
+                icon: const Icon(Icons.update),
+                label: const Text('Update'))
+          ],
+        ),
+      );
+    } else {
+      return const Scaffold();
+    }
   }
 }
