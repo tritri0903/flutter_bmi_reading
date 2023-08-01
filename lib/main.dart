@@ -137,11 +137,11 @@ class FindDeviceScreen extends StatelessWidget {
 
   BluetoothDevice connectToDevice(String deviceName) {
     late BluetoothDevice device;
-    FlutterBluePlus.scanResults.listen((results) async {
+    FlutterBluePlus.scanResults.listen((results) {
       for (ScanResult r in results) {
         if (r.device.localName == deviceName) {
           device = r.device;
-          await device.connect();
+          device.connect();
         }
       }
     });
