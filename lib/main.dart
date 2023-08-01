@@ -46,9 +46,7 @@ class FlutterBlueApp extends StatelessWidget {
 }
 
 class FindDeviceScreen extends StatelessWidget {
-  FindDeviceScreen({super.key});
-
-  final BluetoothDevice = TextEditingController();
+  const FindDeviceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +64,11 @@ class FindDeviceScreen extends StatelessWidget {
                   hintText: 'Enter device name',
                   labelText: 'Device Name'),
               textAlign: TextAlign.center,
-              onSubmitted: (value) => connectToDevice(value),
+              onSubmitted: (value) {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        DeviceScreen(bluetoothDevice: connectToDevice(value))));
+              },
             ),
           ),
           Padding(
@@ -80,21 +82,25 @@ class FindDeviceScreen extends StatelessWidget {
                   initialData: const [],
                   builder: (context, snapshot) => Column(
                     children: snapshot.data!
-                        .map((d) => Column(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(5.0),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5),
-                                      border: Border.all(
-                                          width: 2, color: Colors.grey)),
-                                  child: Text(
-                                    d.device.localName,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w500),
+                        .map((d) => ListView.builder(
+                              itemCount: 10,
+                              itemBuilder: (context, index) {
+                                return SizedBox(
+                                  height: 50,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5.0),
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(5),
+                                        border: Border.all(
+                                            width: 2, color: Colors.grey)),
+                                    child: Text(
+                                      d.device.localName,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w500),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ))
                         .toList(),
                   ),
@@ -122,14 +128,24 @@ class FindDeviceScreen extends StatelessWidget {
     );
   }
 
-  void connectToDevice(String deviceName) {
+  ListTile scanDeviceListTile() {
+    return ListTile(
+      leading: Icon(Icons.bluetooth),
+      title: Text('data'),
+    );
+  }
+
+  BluetoothDevice connectToDevice(String deviceName) {
+    late BluetoothDevice device;
     FlutterBluePlus.scanResults.listen((results) async {
       for (ScanResult r in results) {
         if (r.device.localName == deviceName) {
-          await r.device.connect();
+          device = r.device;
+          await device.connect();
         }
       }
     });
+    return device;
   }
 }
 
@@ -149,16 +165,16 @@ class DeviceScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Row(
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'Axe Y: ',
                   style: TextStyle(
                     fontSize: 20,
                   ),
                 ),
                 Text(
-                  '1.0',
-                  style: TextStyle(
+                  bluetoothDevice.localName.toString(),
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -190,11 +206,4 @@ class DeviceScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-void getService(BluetoothDevice bluetoothDevice) async {
-  List<BluetoothService> services = await bluetoothDevice.discoverServices();
-  services.forEach((service) {
-    // do something with service
-  });
 }
