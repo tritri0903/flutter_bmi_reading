@@ -57,21 +57,6 @@ class FindDeviceScreen extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter device name',
-                  labelText: 'Device Name'),
-              textAlign: TextAlign.center,
-              onSubmitted: (value) {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) =>
-                        DeviceScreen(bluetoothDevice: connectToDevice(value))));
-              },
-            ),
-          ),
-          Padding(
               padding: const EdgeInsets.all(20.0),
               child: Container(
                 decoration: BoxDecoration(
@@ -86,6 +71,8 @@ class FindDeviceScreen extends StatelessWidget {
                             title: Text(d.device.localName),
                             subtitle: Card(
                               child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Text(
                                     d.device.localName,
@@ -95,9 +82,12 @@ class FindDeviceScreen extends StatelessWidget {
                                   ),
                                   TextButton(
                                     child: const Icon(Icons.bluetooth),
-                                    onPressed: () => DeviceScreen(
-                                        bluetoothDevice: connectToDevice(
-                                            d.device.localName)),
+                                    onPressed: () => Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) {
+                                      d.device.connect();
+                                      return DeviceScreen(
+                                          bluetoothDevice: d.device);
+                                    })),
                                   )
                                 ],
                               ),
@@ -137,11 +127,11 @@ class FindDeviceScreen extends StatelessWidget {
 
   BluetoothDevice connectToDevice(String deviceName) {
     late BluetoothDevice device;
-    FlutterBluePlus.scanResults.listen((results) async {
+    FlutterBluePlus.scanResults.listen((results) {
       for (ScanResult r in results) {
         if (r.device.localName == deviceName) {
           device = r.device;
-          await device.connect();
+          device.connect();
         }
       }
     });
