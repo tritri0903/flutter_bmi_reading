@@ -82,26 +82,26 @@ class FindDeviceScreen extends StatelessWidget {
                   initialData: const [],
                   builder: (context, snapshot) => Column(
                     children: snapshot.data!
-                        .map((d) => ListView.builder(
-                              itemCount: 10,
-                              itemBuilder: (context, index) {
-                                return SizedBox(
-                                  height: 50,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5.0),
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        border: Border.all(
-                                            width: 2, color: Colors.grey)),
-                                    child: Text(
-                                      d.device.localName,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w500),
-                                    ),
+                        .map((d) => ListTile(
+                            title: Text(d.device.localName),
+                            subtitle: Card(
+                              child: Row(
+                                children: [
+                                  Text(
+                                    d.device.localName,
+                                    style: const TextStyle(
+                                        fontSize: 15.0,
+                                        fontWeight: FontWeight.w500),
                                   ),
-                                );
-                              },
-                            ))
+                                  TextButton(
+                                    child: const Icon(Icons.bluetooth),
+                                    onPressed: () => DeviceScreen(
+                                        bluetoothDevice: connectToDevice(
+                                            d.device.localName)),
+                                  )
+                                ],
+                              ),
+                            )))
                         .toList(),
                   ),
                 ),
