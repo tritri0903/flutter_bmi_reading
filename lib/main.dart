@@ -185,11 +185,17 @@ List<Widget> _buildService(List<BluetoothService> services) {
         title: Text(s.serviceUuid.toString()),
         subtitle: Builder(builder: (context) {
           return Column(
-            children: s.characteristics.map((e) {
-              return ListTile(
-                title: Text(e.descriptors.first.lastValue.toString()),
-                trailing: Text(e.lastValue.toString()),
-              );
+            children: s.characteristics.map((c) {
+              c.read();
+              c.setNotifyValue(true);
+              return StreamBuilder<List<int>>(
+                  stream: c.lastValueStream,
+                  builder: (context, snapshot) {
+                    return ListTile(
+                      title: Text(c.descriptors.first.lastValue.toString()),
+                      trailing: Text(snapshot.data.toString()),
+                    );
+                  });
             }).toList(),
           );
         }),
