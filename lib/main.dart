@@ -1,5 +1,9 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'dart:typed_data';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -179,21 +183,21 @@ List<Widget> _buildService(List<BluetoothService> services) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(width: 4.0),
-        color: Colors.grey,
+        borderRadius: BorderRadius.circular(20.0),
       ),
       child: ListTile(
         title: Text(s.serviceUuid.toString()),
         subtitle: Builder(builder: (context) {
           return Column(
             children: s.characteristics.map((c) {
-              c.read();
+              //c.read();
               c.setNotifyValue(true);
               return StreamBuilder<List<int>>(
                   stream: c.lastValueStream,
                   builder: (context, snapshot) {
                     return ListTile(
                       title: Text(c.descriptors.first.lastValue.toString()),
-                      trailing: Text(snapshot.data.toString()),
+                      trailing: Text(floatToString(snapshot.data)),
                     );
                   });
             }).toList(),
@@ -202,4 +206,11 @@ List<Widget> _buildService(List<BluetoothService> services) {
       ),
     );
   }).toList();
+}
+
+String floatToString(data) {
+  final bytes = Uint8List.fromList(data);
+  final byteData = ByteData.sublistView(bytes);
+  double value = byteData.getFloat32(0, Endian.little);
+  return value.toString();
 }
