@@ -212,5 +212,5 @@ String floatToString(data) {
   final bytes = Uint8List.fromList(data);
   final byteData = ByteData.sublistView(bytes);
   double value = byteData.getFloat32(0, Endian.little);
-  return value.toString();
+  return value.toStringAsFixed(3);
 }
