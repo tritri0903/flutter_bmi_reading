@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -128,34 +126,50 @@ class DeviceScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text("Connected to ${bluetoothDevice.localName}"),
       ),
-      body: StreamBuilder<BluetoothConnectionState>(
-          stream: bluetoothDevice.connectionState,
-          builder: (context, snapshot) {
-            if (snapshot.data == BluetoothConnectionState.connected) {
-              bluetoothDevice.discoverServices();
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    StreamBuilder<List<BluetoothService>>(
-                      stream: bluetoothDevice.servicesStream,
-                      initialData: [],
-                      builder: (context, snapshot) {
-                        if (snapshot.data!.isNotEmpty) {
-                          return Column(
-                            children: _buildService(snapshot.data!),
-                          );
-                        } else {
-                          return const CircularProgressIndicator();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              );
-            } else {
-              return const CircularProgressIndicator();
-            }
-          }),
+      body: Container(
+        margin: const EdgeInsets.all(8.0),
+        child: StreamBuilder<BluetoothConnectionState>(
+            stream: bluetoothDevice.connectionState,
+            builder: (context, snapshot) {
+              if (snapshot.data == BluetoothConnectionState.connected) {
+                bluetoothDevice.discoverServices();
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      StreamBuilder<List<BluetoothService>>(
+                        stream: bluetoothDevice.servicesStream,
+                        initialData: [],
+                        builder: (context, snapshot) {
+                          if (snapshot.data!.isNotEmpty) {
+                            return Column(
+                              children: _buildService(snapshot.data!),
+                            );
+                          } else {
+                            return Center(
+                                child: Column(
+                              children: const [
+                                CircularProgressIndicator(),
+                                Text("Looking for characteristics")
+                              ],
+                            ));
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                return Center(
+                  child: Column(
+                    children: const [
+                      CircularProgressIndicator(),
+                      Text("Waiting for connection")
+                    ],
+                  ),
+                );
+              }
+            }),
+      ),
     );
   }
 }
@@ -173,7 +187,7 @@ List<Widget> _buildService(List<BluetoothService> services) {
           return Column(
             children: s.characteristics.map((e) {
               return ListTile(
-                title: const Text("Axe X:"),
+                title: Text(e.descriptors.first.lastValue.toString()),
                 trailing: Text(e.lastValue.toString()),
               );
             }).toList(),
