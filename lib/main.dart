@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:o3d/o3d.dart';
+import 'package:flutter_cube/flutter_cube.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,14 +22,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const DefaultTabController(
+      home: DefaultTabController(
           length: 2,
           child: Scaffold(
             body: TabBarView(children: [
-              FlutterBlueApp(),
+              const FlutterBlueApp(),
               ConnectedDevice(),
             ]),
-            bottomNavigationBar: TabBar(tabs: [
+            bottomNavigationBar: const TabBar(tabs: [
               Tab(icon: Icon(Icons.search)),
               Tab(icon: Icon(Icons.connected_tv))
             ]),
@@ -50,7 +51,7 @@ class FlutterBlueApp extends StatelessWidget {
           builder: (c, snapshot) {
             final state = snapshot.data;
             if (state == BluetoothAdapterState.on) {
-              FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+              //FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
               return const FindDeviceScreen();
             }
             return const Text('Error no bluetooth');
@@ -125,49 +126,94 @@ class FindDeviceScreen extends StatelessWidget {
   }
 }
 
-class ConnectedDevice extends StatelessWidget {
-  const ConnectedDevice({
-    super.key,
-  });
+class ConnectedDevice extends StatefulWidget {
+  ConnectedDevice({super.key});
+
+  @override
+  State<ConnectedDevice> createState() => _ConnectedDeviceState();
+}
+
+class _ConnectedDeviceState extends State<ConnectedDevice>
+    with SingleTickerProviderStateMixin {
+  // to control the animation
+  final O3DController controller = O3DController();
+
+  late Object _cube;
+  late Scene _scene;
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(duration: Duration(milliseconds: 3000), vsync: this)
+          ..addListener(() {
+            _cube.rotation.y = _controller.value * 360;
+            _cube.position.x = _controller.value * 12 - 5;
+            _cube.updateTransform();
+            _scene.update();
+          })
+          ..repeat();
+  }
+
+  void _onSceneCreated(Scene scene) {
+    _scene = scene;
+    _cube = Object(
+        position: Vector3(-5, 0, 0),
+        scale: Vector3(1.0, 1.0, 1.0),
+        backfaceCulling: false,
+        fileName: 'assets/cube/cube.obj');
+    scene.world.add(_cube);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(width: 2, color: Colors.grey)),
-      child: StreamBuilder<List<BluetoothDevice>>(
-        stream: Stream.periodic(const Duration(seconds: 2))
-            .asyncMap((_) => FlutterBluePlus.connectedSystemDevices),
-        initialData: const [],
-        builder: (context, snapshot) => Column(
-          children: snapshot.data!.map((d) {
-            if (d.localName.isNotEmpty) {
-              return Card(
-                child: ListTile(
-                  title: Text(
-                    d.localName,
-                    style: const TextStyle(
-                        fontSize: 15.0, fontWeight: FontWeight.w500),
-                  ),
-                  trailing: TextButton(
-                    child: const Icon(Icons.ac_unit),
-                    onPressed: () => Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      d.connect();
-                      return DeviceScreen(bluetoothDevice: d);
-                    })),
-                  ),
-                ),
-              );
-            } else {
-              return ListTile(
-                title: Text(d.remoteId.toString()),
-              );
-            }
-          }).toList(),
+    return Column(
+      children: [
+        Container(
+          height: 500,
+          child: Cube(
+            onSceneCreated: _onSceneCreated,
+          ),
         ),
-      ),
+        Container(
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(width: 2, color: Colors.grey)),
+          child: StreamBuilder<List<BluetoothDevice>>(
+            stream: Stream.periodic(const Duration(seconds: 2))
+                .asyncMap((_) => FlutterBluePlus.connectedSystemDevices),
+            initialData: const [],
+            builder: (context, snapshot) => Column(
+              children: snapshot.data!.map((d) {
+                if (d.localName.isNotEmpty) {
+                  return Card(
+                    child: ListTile(
+                      title: Text(
+                        d.localName,
+                        style: const TextStyle(
+                            fontSize: 15.0, fontWeight: FontWeight.w500),
+                      ),
+                      trailing: TextButton(
+                        child: const Icon(Icons.ac_unit),
+                        onPressed: () => Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (context) {
+                          d.connect();
+                          return DeviceScreen(bluetoothDevice: d);
+                        })),
+                      ),
+                    ),
+                  );
+                } else {
+                  return ListTile(
+                    title: Text(d.remoteId.toString()),
+                  );
+                }
+              }).toList(),
+            ),
+          ),
+        )
+      ],
     );
   }
 }
@@ -202,9 +248,9 @@ class DeviceScreen extends StatelessWidget {
                               children: _buildService(snapshot.data!),
                             );
                           } else {
-                            return Center(
+                            return const Center(
                                 child: Column(
-                              children: const [
+                              children: [
                                 CircularProgressIndicator(),
                                 Text("Looking for characteristics")
                               ],

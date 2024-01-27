@@ -33,6 +33,7 @@ dependencies:
 
   flutter_blue_plus: ^1.12.7
   o3d: ^3.1.0
+  flutter_cube: ^0.1.1
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -62,9 +63,12 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/spaceshop.obj
+    - assets/cube/cube.obj
+    - assets/cube/cube.mtl
+    - assets/cube/flutter.png
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
