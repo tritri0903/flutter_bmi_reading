@@ -1,11 +1,10 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'dart:typed_data';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:o3d/o3d.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,7 +21,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const FlutterBlueApp(),
+      home: const DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            body: TabBarView(children: [
+              FlutterBlueApp(),
+              ConnectedDevice(),
+            ]),
+            bottomNavigationBar: TabBar(tabs: [
+              Tab(icon: Icon(Icons.search)),
+              Tab(icon: Icon(Icons.connected_tv))
+            ]),
+          )),
     );
   }
 }
@@ -41,7 +51,7 @@ class FlutterBlueApp extends StatelessWidget {
             final state = snapshot.data;
             if (state == BluetoothAdapterState.on) {
               FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
-              return FindDeviceScreen();
+              return const FindDeviceScreen();
             }
             return const Text('Error no bluetooth');
           }),
@@ -76,10 +86,10 @@ class FindDeviceScreen extends StatelessWidget {
                           fontSize: 15.0, fontWeight: FontWeight.w500),
                     ),
                     trailing: TextButton(
-                      child: const Icon(Icons.bluetooth),
+                      child: const Icon(Icons.ac_unit),
                       onPressed: () => Navigator.of(context)
                           .push(MaterialPageRoute(builder: (context) {
-                        connectToDevice(d.device);
+                        d.device.connect();
                         return DeviceScreen(bluetoothDevice: d.device);
                       })),
                     ),
@@ -113,9 +123,52 @@ class FindDeviceScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
+class ConnectedDevice extends StatelessWidget {
+  const ConnectedDevice({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(width: 2, color: Colors.grey)),
+      child: StreamBuilder<List<BluetoothDevice>>(
+        stream: Stream.periodic(const Duration(seconds: 2))
+            .asyncMap((_) => FlutterBluePlus.connectedSystemDevices),
+        initialData: const [],
+        builder: (context, snapshot) => Column(
+          children: snapshot.data!.map((d) {
+            if (d.localName.isNotEmpty) {
+              return Card(
+                child: ListTile(
+                  title: Text(
+                    d.localName,
+                    style: const TextStyle(
+                        fontSize: 15.0, fontWeight: FontWeight.w500),
+                  ),
+                  trailing: TextButton(
+                    child: const Icon(Icons.ac_unit),
+                    onPressed: () => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (context) {
+                      d.connect();
+                      return DeviceScreen(bluetoothDevice: d);
+                    })),
+                  ),
+                ),
+              );
+            } else {
+              return ListTile(
+                title: Text(d.remoteId.toString()),
+              );
+            }
+          }).toList(),
+        ),
+      ),
+    );
   }
 }
 
@@ -187,13 +240,14 @@ List<Widget> _buildService(List<BluetoothService> services) {
       ),
       child: ListTile(
         title: Text(s.serviceUuid.toString()),
-        subtitle: Builder(builder: (context) {
-          return Column(
+        subtitle: SizedBox(
+          child: Column(
             children: s.characteristics.map((c) {
               //c.read();
-              c.setNotifyValue(true);
+              //c.setNotifyValue(true);
               return StreamBuilder<List<int>>(
                   stream: c.lastValueStream,
+                  initialData: c.lastValue,
                   builder: (context, snapshot) {
                     return ListTile(
                       title: Text(c.descriptors.first.lastValue.toString()),
@@ -201,8 +255,8 @@ List<Widget> _buildService(List<BluetoothService> services) {
                     );
                   });
             }).toList(),
-          );
-        }),
+          ),
+        ),
       ),
     );
   }).toList();
